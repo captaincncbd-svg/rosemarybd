@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="bn" class="scroll-smooth">
 <head>
@@ -335,22 +334,27 @@
                 </div>
 
                 <!-- ORDERS TABLE CONTAINER -->
-                <div id="admin-orders-panel" class="p-6 overflow-x-auto">
-                    <table class="w-full text-left border-collapse">
-                        <thead>
-                            <tr class="border-b border-forest/10 text-[11px] uppercase text-forest/60">
-                                <th class="py-3 px-3">অর্ডার আইডি ও তারিখ</th>
-                                <th class="py-3 px-3">কাস্টমার তথ্য</th>
-                                <th class="py-3 px-3">অর্ডারকৃত পণ্য</th>
-                                <th class="py-3 px-3">মোট বিল ও পেমেন্ট</th>
-                                <th class="py-3 px-3">স্ট্যাটাস</th>
-                                <th class="py-3 px-3 text-right">অ্যাকশন (Courier Copy)</th>
-                            </tr>
-                        </thead>
-                        <tbody id="admin-orders-tbody" class="divide-y divide-forest/10 text-sm">
-                            <!-- Injected via JS -->
-                        </tbody>
-                    </table>
+                <div id="admin-orders-panel" class="p-4 sm:p-6">
+                    <div class="space-y-3 mb-4">
+                        <div id="of-status" class="flex flex-wrap gap-2"></div>
+                        <div class="flex flex-wrap gap-2 items-end">
+                            <label class="text-[11px] font-bold">শুরুর তারিখ<input type="date" id="of-from" onchange="setOF()" class="block mt-1 px-3 py-2 rounded-xl bg-white border border-forest/20 text-xs"></label>
+                            <label class="text-[11px] font-bold">শেষ তারিখ<input type="date" id="of-to" onchange="setOF()" class="block mt-1 px-3 py-2 rounded-xl bg-white border border-forest/20 text-xs"></label>
+                            <button onclick="quickRange('today')" class="px-3 py-2 rounded-lg bg-forest/10 hover:bg-forest hover:text-cream text-xs font-semibold transition">আজ</button>
+                            <button onclick="quickRange(7)" class="px-3 py-2 rounded-lg bg-forest/10 hover:bg-forest hover:text-cream text-xs font-semibold transition">৭ দিন</button>
+                            <button onclick="quickRange(30)" class="px-3 py-2 rounded-lg bg-forest/10 hover:bg-forest hover:text-cream text-xs font-semibold transition">৩০ দিন</button>
+                            <button onclick="quickRange(0)" class="px-3 py-2 rounded-lg bg-forest/10 hover:bg-forest hover:text-cream text-xs font-semibold transition">সব সময়</button>
+                        </div>
+                        <input id="of-q" oninput="setOF()" placeholder="নাম / মোবাইল / অর্ডার আইডি খুঁজুন" class="w-full px-4 py-2.5 rounded-xl bg-white border border-forest/20 text-sm">
+                        <div class="flex flex-wrap items-center gap-2 bg-white rounded-2xl p-3 border border-forest/10">
+                            <label class="flex items-center gap-2 text-xs font-bold"><input type="checkbox" id="of-all" onchange="selAll(this.checked)" class="w-5 h-5"> সব নির্বাচন</label>
+                            <span id="of-info" class="text-xs text-forest/70 mr-auto"></span>
+                            <button onclick="bulkCopy()" class="px-3 py-2 rounded-lg bg-forest/10 hover:bg-forest hover:text-cream text-xs font-semibold transition"><i class="fa-regular fa-copy mr-1"></i> কপি</button>
+                            <button onclick="bulkPrint()" class="px-3 py-2 rounded-lg bg-forest text-cream hover:bg-terracotta text-xs font-bold transition"><i class="fa-solid fa-print mr-1"></i> প্রিন্ট / PDF</button>
+                        </div>
+                        <p class="text-[11px] text-forest/60">কিছু নির্বাচন না করলে ফিল্টার করা সব অর্ডার প্রিন্ট/কপি হবে। PDF করতে প্রিন্ট পেইজে "Save as PDF" বেছে নিন।</p>
+                    </div>
+                    <div id="admin-orders-list" class="space-y-3"></div>
                 </div>
 
                 <!-- CUSTOMERS CONTAINER -->
@@ -559,8 +563,11 @@
                 </div>
 
                 <div>
-                    <label class="block text-xs font-bold mb-1">ছবির লিংক (Image URL) *</label>
-                    <input type="url" id="prod-img" placeholder="https://..." class="w-full px-3.5 py-2.5 rounded-xl bg-white border border-forest/20">
+                    <label class="block text-xs font-bold mb-1">পণ্যের ছবি * (কমপক্ষে ৩টি, প্রথমটি মূল ছবি)</label>
+                    <input type="file" id="prod-files" accept="image/*" multiple class="hidden" onchange="addProdFiles(this.files)">
+                    <button type="button" onclick="document.getElementById('prod-files').click()" class="w-full py-3 rounded-xl border-2 border-dashed border-forest/30 text-sm font-semibold hover:border-forest transition"><i class="fa-solid fa-image mr-1"></i> গ্যালারি থেকে ছবি বাছুন (একসাথে একাধিক)</button>
+                    <div id="prod-gallery" class="grid grid-cols-3 gap-2 mt-3"></div>
+                    <div class="flex gap-2 mt-2"><input type="url" id="prod-img" placeholder="অথবা ছবির লিংক বসান" class="flex-1 px-3.5 py-2.5 rounded-xl bg-white border border-forest/20 text-sm"><button type="button" onclick="addProdUrl()" class="px-4 rounded-xl bg-forest/10 text-xs font-bold">যোগ</button></div>
                 </div>
 
                 <div>
@@ -640,9 +647,9 @@
 /**************************************************************
  * 1. CONFIG  (এখানে আপনার তথ্য বসান)
  **************************************************************/
-let FIREBASE_DB_URL = localStorage.getItem('pb_firebase_url') || "https://rosemarybd-32867-default-rtdb.asia-southeast1.firebasedatabase.app";   // অথবা অ্যাডমিন > Firebase URL সেটআপ থেকে দিন
-const FIREBASE_API_KEY = "AIzaSyBygtisjdg9reOIWUrPl5qut3B5rV6L56E";   // Firebase Project Settings > Web API Key (অ্যাডমিন লগইনের জন্য)
-const ADMIN_EMAIL = "captain.cnc.bd@gmail.com";        // Firebase Authentication-এ বানানো অ্যাডমিন ইমেইল
+let FIREBASE_DB_URL = localStorage.getItem('pb_firebase_url') || "";   // অথবা অ্যাডমিন > Firebase URL সেটআপ থেকে দিন
+const FIREBASE_API_KEY = "";   // Firebase Project Settings > Web API Key (অ্যাডমিন লগইনের জন্য)
+const ADMIN_EMAIL = "";        // Firebase Authentication-এ বানানো অ্যাডমিন ইমেইল
 const PAY_NUMBERS = {bKash:"01892574822", Nagad:"01734343235"};   // শুধু Send Money নাম্বার
 const ADMIN_PIN = "1234";      // UI লক (আসল সুরক্ষা Firebase Auth + Rules)
 const CATS = ['Hair Care','Skin Care','Raw Herbs','Oils'];
@@ -650,15 +657,16 @@ const CAT_LABEL = {'All':'সকল পণ্য (All)','Hair Care':'হেয�
 const LEGACY = {'Hair Oil':'Oils','Herbal Powder':'Hair Care'};
 const PH = 'data:image/svg+xml;utf8,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400"><rect width="400" height="400" fill="#214638"/><text x="200" y="230" font-size="120" text-anchor="middle">🌿</text></svg>');
 
-/* Firebase Rules (Realtime Database > Rules এ পেস্ট করুন; captain.cnc.bd@gmail.com বদলে আপনার অ্যাডমিন ইমেইল দিন):
+/* Firebase Rules (Realtime Database > Rules এ পেস্ট করুন; YOUR_ADMIN_EMAIL বদলে আপনার অ্যাডমিন ইমেইল দিন):
 {"rules":{
- "products":{".read":true,".write":"auth != null && auth.token.email == 'captain.cnc.bd@gmail.com'"},
- "orders":{".read":"auth != null && auth.token.email == 'captain.cnc.bd@gmail.com'",
-   "$id":{".read":true,".write":"(auth != null && auth.token.email == 'captain.cnc.bd@gmail.com') || (auth != null && !data.exists())"}},
- "customers":{".read":"auth != null && auth.token.email == 'captain.cnc.bd@gmail.com'",
-   "$phone":{".write":"auth != null && (auth.token.email == 'captain.cnc.bd@gmail.com' || auth.token.email == $phone + '@rosemarybd.app')"}},
+ "products":{".read":true,".write":"auth != null && auth.token.email == 'YOUR_ADMIN_EMAIL'"},
+ "orders":{".read":"auth != null && auth.token.email == 'YOUR_ADMIN_EMAIL'",
+   "$id":{".read":true,".write":"(auth != null && auth.token.email == 'YOUR_ADMIN_EMAIL') || (auth != null && !data.exists())"}},
+ "productImages":{".read":true,".write":"auth != null && auth.token.email == 'YOUR_ADMIN_EMAIL'"},
+ "customers":{".read":"auth != null && auth.token.email == 'YOUR_ADMIN_EMAIL'",
+   "$phone":{".write":"auth != null && (auth.token.email == 'YOUR_ADMIN_EMAIL' || auth.token.email == $phone + '@rosemarybd.app')"}},
  "reviews":{".read":true,"$pid":{"$rid":{
-   ".write":"(auth != null && auth.token.email == 'captain.cnc.bd@gmail.com') || !data.exists()",
+   ".write":"(auth != null && auth.token.email == 'YOUR_ADMIN_EMAIL') || !data.exists()",
    ".validate":"newData.hasChildren(['name','rating','text','ts']) && newData.child('rating').isNumber() && newData.child('rating').val()>=1 && newData.child('rating').val()<=5 && newData.child('name').val().length<=40 && newData.child('text').val().length<=500"}}}
 }} */
 
@@ -818,7 +826,7 @@ async function saveProductToDB(p){
 async function deleteProductFromDB(id){
   if(!confirm("আপনি কি নিশ্চিতভাবে এই পণ্যটি মুছে ফেলতে চান?"))return;
   try{
-    if(live())await fb(`products/${id}`,'DELETE',undefined,true);
+    if(live()){await fb(`products/${id}`,'DELETE',undefined,true);await fb('productImages/'+encodeURIComponent(id),'DELETE',undefined,true).catch(()=>{})}
     products=products.filter(p=>p.id!==id);
     if(!live())localStorage.setItem('pb_products',JSON.stringify(products));
     renderProducts();renderAdminDashboard();
@@ -1047,15 +1055,7 @@ function renderAdminDashboard(){
   $('stat-total-orders').textContent=orders.length;
   $('stat-pending-orders').textContent=orders.filter(o=>o.status==='Pending').length;
   $('stat-delivered-orders').textContent=orders.filter(o=>o.status==='Delivered').length;
-  $('admin-orders-tbody').innerHTML=orders.length?orders.map(o=>`
-  <tr class="hover:bg-cream/60">
-    <td class="py-3.5 px-3"><span class="font-bold text-forest block">${esc(o.orderId)}</span><span class="text-[11px] text-forest/60">${esc(o.dateStr||'')}</span></td>
-    <td class="py-3.5 px-3"><span class="font-bold block">${esc(o.customerName)}</span><span class="text-xs text-terracotta font-semibold block">${esc(o.phone)}</span><span class="text-xs text-forest/70 block max-w-xs">${esc(o.address)} (${esc(o.zone)})</span></td>
-    <td class="py-3.5 px-3 text-xs max-w-xs">${(o.items||[]).map(i=>`${esc(i.name)} (${esc(i.variant)}) x${i.qty}`).join(', ')}${o.note?`<span class="block text-[11px] text-amber-700 mt-1">Note: ${esc(o.note)}</span>`:''}</td>
-    <td class="py-3.5 px-3"><span class="font-bold text-forest block">৳${o.grandTotal}</span><span class="text-[11px] text-forest/60">${esc(o.paymentMethod)} ${o.trxId&&o.trxId!=='N/A'?`(${esc(o.trxId)})`:''}</span></td>
-    <td class="py-3.5 px-3"><select onchange="updateOrderStatusInDB('${esc(o.orderId)}',this.value)" class="px-2.5 py-1.5 rounded-lg border border-forest/20 text-xs font-bold bg-white">${['Pending','Processing','Shipped','Delivered','Cancelled'].map(st=>`<option value="${st}" ${o.status===st?'selected':''}>${st}</option>`).join('')}</select></td>
-    <td class="py-3.5 px-3 text-right"><button onclick="copyForCourier('${esc(o.orderId)}')" class="px-3 py-1.5 rounded-lg bg-forest/10 hover:bg-forest hover:text-cream text-xs font-semibold transition"><i class="fa-regular fa-copy mr-1"></i> কুরিয়ার কপি</button></td>
-  </tr>`).join(''):'<tr><td colspan="6" class="py-10 text-center text-forest/50">এখনো কোনো অর্ডার আসেনি।</td></tr>';
+  renderOrders();
   $('admin-inventory-tbody').innerHTML=products.map(p=>`
   <tr class="hover:bg-cream/60">
     <td class="py-3 px-3 flex items-center gap-3"><img src="${esc(p.image||'')}" onerror="this.onerror=null;this.src=PH" class="w-11 h-11 rounded-xl object-cover" alt=""><div><span class="font-bold block">${esc(p.name)}</span><span class="text-xs text-forest/60">${esc(p.bnName)}</span></div></td>
@@ -1065,33 +1065,7 @@ function renderAdminDashboard(){
     <td class="py-3 px-3 text-right space-x-2"><button onclick="editProduct('${esc(p.id)}')" class="px-3 py-1 rounded-lg border border-forest/20 text-xs font-semibold hover:bg-forest hover:text-cream">এডিট</button><button onclick="deleteProductFromDB('${esc(p.id)}')" class="px-3 py-1 rounded-lg bg-red-50 text-red-600 text-xs font-semibold hover:bg-red-600 hover:text-white">ডিলিট</button></td>
   </tr>`).join('');
 }
-function copyForCourier(id){
-  const o=orders.find(x=>x.orderId===id);if(!o)return;
-  const cod=o.paymentMethod==='COD'?o.grandTotal:0;   // অগ্রিম পেমেন্ট হলে COD = 0
-  const t=`Invoice: ${o.orderId}\nName: ${o.customerName}\nPhone: ${o.phone}\nAddress: ${o.address}\nCOD Amount: ${cod} BDT\nPayment: ${o.paymentMethod}${o.trxId&&o.trxId!=='N/A'?' (Paid, TrxID '+o.trxId+')':''}\nItems: ${(o.items||[]).map(i=>`${i.name} (${i.variant}) x${i.qty}`).join(', ')}${o.note?'\nNote: '+o.note:''}`;
-  navigator.clipboard.writeText(t).then(()=>alert('কুরিয়ার বুকিংয়ের তথ্য কপি হয়েছে! COD Amount: '+cod+' BDT'),()=>prompt('কপি করুন:',t));
-}
-function openProductModal(){
-  ['prod-id','prod-name','prod-bn','prod-variants','prod-img','prod-desc'].forEach(i=>$(i).value='');
-  $('prod-stock').checked=true;$('prod-cat').value=CATS[0];$('product-modal-title').textContent='নতুন অর্গানিক পণ্য যোগ করুন';show('product-modal',true);
-}
-function editProduct(id){
-  const p=products.find(x=>x.id===id);if(!p)return;
-  $('prod-id').value=p.id;$('prod-name').value=p.name;$('prod-bn').value=p.bnName;$('prod-cat').value=p.category;
-  $('prod-variants').value=p.variants.map(v=>`${v.label}=${v.price}`).join(', ');
-  $('prod-img').value=p.image||'';$('prod-desc').value=p.description||'';$('prod-stock').checked=!!p.inStock;
-  $('product-modal-title').textContent='পণ্য এডিট করুন';show('product-modal',true);
-}
 function closeProductModal(){show('product-modal',false)}
-async function saveProductForm(e){
-  e.preventDefault();
-  const vs=$('prod-variants').value.split(',').map(x=>x.trim()).filter(Boolean).map(x=>{const [l,p]=x.split('=');return {label:(l||'').trim(),price:Number((p||'').trim())}});
-  if(!vs.length||vs.some(v=>!v.label||!(v.price>0))){alert('প্যাক সাইজ ও দাম এভাবে লিখুন: 50g=150, 100g=260');return}
-  const old=products.find(p=>p.id===$('prod-id').value);
-  const obj={id:$('prod-id').value||'prod_'+Date.now(),name:$('prod-name').value.trim(),bnName:$('prod-bn').value.trim(),category:$('prod-cat').value,variants:vs,
-    image:$('prod-img').value.trim(),description:$('prod-desc').value.trim(),inStock:$('prod-stock').checked,badge:old?.badge||'100% Organic'};
-  if(await saveProductToDB(obj))closeProductModal();
-}
 function openFirebaseConfigModal(){$('firebase-url-input').value=FIREBASE_DB_URL;show('firebase-modal',true)}
 function closeFirebaseConfigModal(){show('firebase-modal',false)}
 async function saveFirebaseUrl(){
@@ -1142,7 +1116,7 @@ function addDetailToCart(){
 function renderProductDetail(p){
   const v=p.variants[det.vi]||p.variants[0],rel=products.filter(x=>x.id!==p.id).slice(0,3);
   $('product-detail').innerHTML=`
-  <div><div class="rounded-t-[180px] rounded-b-3xl overflow-hidden border-4 border-white shadow-2xl aspect-[4/5] bg-creamDark max-w-md mx-auto"><img src="${esc(p.image||'')}" onerror="this.onerror=null;this.src=PH" alt="${esc(p.name)}" class="w-full h-full object-cover"></div></div>
+  ${galleryHTML(p)}
   <div class="space-y-5">
     <span class="text-[11px] uppercase tracking-widest text-terracotta font-bold">${esc(p.category)}${p.badge?' • '+esc(p.badge):''}</span>
     <div><h1 class="font-serif text-4xl font-bold text-forest leading-tight">${esc(p.name)}</h1><p class="text-lg text-forest/75 mt-1">${esc(p.bnName)}</p></div>
@@ -1162,7 +1136,7 @@ function route(){
   const m=location.hash.match(/^#product\/(.+)$/),pv=$('product-view'),was=!pv.classList.contains('hidden');
   const p=m&&products.find(x=>x.id===decodeURIComponent(m[1]));
   if(p){
-    if(det.id!==p.id)det={id:p.id,vi:0,qty:1};
+    if(det.id!==p.id){det={id:p.id,vi:0,qty:1,gi:0};fetchGallery(p.id).then(()=>{if(det.id===p.id&&!$('product-view').classList.contains('hidden'))renderProductDetail(p)})}
     renderProductDetail(p);$('storefront-view').classList.add('hidden');$('admin-view').classList.add('hidden');pv.classList.remove('hidden');
     if(!was)window.scrollTo(0,0);showReviews(p.id);return;
   }
@@ -1345,6 +1319,176 @@ function copyCustomers(){
   const q=x=>'"'+String(x).replace(/"/g,'""')+'"',d=t=>t?new Date(t).toISOString().slice(0,10):'';
   const t='Name,Phone,Joined,LastLogin\n'+customers.map(c=>[c.name||'',c.phone,d(c.joined),d(c.lastLogin)].map(q).join(',')).join('\n');
   navigator.clipboard.writeText(t).then(()=>alert(customers.length+' জনের তালিকা কপি হয়েছে (CSV)'),()=>prompt('কপি করুন:',t));
+}
+
+/**************************************************************
+ * অর্ডার ফিল্টার, মাল্টি-সিলেক্ট, কুরিয়ার কপি ও PDF/প্রিন্ট (Steadfast তথ্যসহ)
+ **************************************************************/
+const OF={st:'All',from:'',to:'',q:''},selO=new Set(),STS=['Pending','Processing','Shipped','Delivered','Cancelled'];
+const codAmt=o=>o.paymentMethod==='COD'?Number(o.grandTotal||0):0;
+function matchO(o,skipSt){
+  if(!skipSt&&OF.st!=='All'&&o.status!==OF.st)return false;
+  if(OF.from&&o.timestamp<new Date(OF.from+'T00:00:00').getTime())return false;
+  if(OF.to&&o.timestamp>new Date(OF.to+'T23:59:59').getTime())return false;
+  if(OF.q&&!(o.orderId+' '+o.customerName+' '+o.phone+' '+(o.loginPhone||'')).toLowerCase().includes(OF.q))return false;
+  return true;
+}
+const fOrders=()=>orders.filter(o=>matchO(o));
+function setOF(){OF.from=$('of-from').value;OF.to=$('of-to').value;OF.q=$('of-q').value.trim().toLowerCase();renderOrders()}
+function setSt(s){OF.st=s;renderOrders()}
+function quickRange(n){
+  const f=d=>new Date(d.getTime()-d.getTimezoneOffset()*6e4).toISOString().slice(0,10),now=new Date();
+  if(n==='today'){$('of-from').value=f(now);$('of-to').value=f(now)}
+  else if(n===0){$('of-from').value='';$('of-to').value=''}
+  else{$('of-from').value=f(new Date(now-n*864e5));$('of-to').value=f(now)}
+  setOF();
+}
+function selOne(id,on){on?selO.add(id):selO.delete(id);renderOrders()}
+function selAll(on){fOrders().forEach(o=>on?selO.add(o.orderId):selO.delete(o.orderId));renderOrders()}
+function pickOrders(){const L=fOrders(),sel=L.filter(o=>selO.has(o.orderId));return sel.length?sel:L}
+function renderOrders(){
+  if(!$('admin-orders-list'))return;
+  const base=orders.filter(o=>matchO(o,true)),L=fOrders();
+  $('of-status').innerHTML=['All',...STS].map(s=>{const n=s==='All'?base.length:base.filter(o=>o.status===s).length;
+    return `<button onclick="setSt('${s}')" class="px-3.5 py-1.5 rounded-full text-xs font-bold border transition ${OF.st===s?'bg-forest text-cream border-forest':'bg-white text-forest border-forest/20'}">${s==='All'?'সব':s} (${n})</button>`}).join('');
+  [...selO].forEach(id=>{if(!orders.some(o=>o.orderId===id))selO.delete(id)});
+  const nSel=L.filter(o=>selO.has(o.orderId)).length;
+  $('of-info').textContent=`দেখাচ্ছে ${L.length}টি · নির্বাচিত ${nSel}টি`;
+  $('of-all').checked=L.length>0&&nSel===L.length;
+  $('admin-orders-list').innerHTML=L.length?L.map(orderCard).join(''):'<p class="py-10 text-center text-forest/50">কোনো অর্ডার পাওয়া যায়নি।</p>';
+}
+function orderCard(o){
+  const id=esc(o.orderId),sel=selO.has(o.orderId),alt=o.loginPhone&&o.loginPhone!==o.phone,paid=o.paymentMethod!=='COD';
+  const b='px-3 py-2 rounded-lg bg-forest/10 hover:bg-forest hover:text-cream text-xs font-semibold transition';
+  return `<div class="bg-white rounded-2xl border border-forest/10 p-4 ${sel?'ring-2 ring-gold':''}"><div class="flex items-start gap-3">
+  <input type="checkbox" class="mt-1 w-5 h-5 shrink-0" ${sel?'checked':''} onchange="selOne('${id}',this.checked)" aria-label="নির্বাচন">
+  <div class="flex-1 min-w-0">
+    <div class="flex justify-between gap-2 flex-wrap items-start"><div><b class="text-forest">${id}</b><span class="block text-[11px] text-forest/60">${esc(o.dateStr||'')}</span></div>
+      <select onchange="updateOrderStatusInDB('${id}',this.value)" class="px-2.5 py-1.5 rounded-lg border border-forest/20 text-xs font-bold bg-white">${STS.map(st=>`<option ${o.status===st?'selected':''}>${st}</option>`).join('')}</select></div>
+    <div class="mt-2 text-sm"><b>${esc(o.customerName)}</b> · <a class="text-terracotta font-semibold" href="tel:${esc(o.phone)}">${esc(o.phone)}</a>${alt?` <span class="text-[11px] text-forest/60">(লগইন: ${esc(o.loginPhone)})</span>`:''}
+      <p class="text-xs text-forest/70 mt-0.5">${esc(o.address)} · ${esc(o.zone)}</p></div>
+    <p class="text-xs mt-2 text-forest/80">${(o.items||[]).map(i=>`${esc(i.name)} (${esc(i.variant)}) ×${i.qty}`).join(', ')}</p>
+    ${o.note?`<p class="text-[11px] text-amber-700 mt-1">নোট: ${esc(o.note)}</p>`:''}
+    <div class="flex items-end justify-between mt-3 flex-wrap gap-2"><div><b class="text-lg font-serif">৳${o.grandTotal}</b> <span class="text-[11px] text-forest/60">${esc(o.paymentMethod)}${o.trxId&&o.trxId!=='N/A'?' · '+esc(o.trxId):''}</span>
+      <span class="block text-[11px] font-bold ${paid?'text-emerald-700':'text-terracotta'}">কুরিয়ারে COD: ৳${codAmt(o)}</span></div>
+      <div class="flex gap-2"><button onclick="copyForCourier('${id}')" class="${b}"><i class="fa-regular fa-copy"></i> কপি</button><button onclick="printCourier(['${id}'])" class="${b}"><i class="fa-solid fa-file-pdf"></i> PDF</button></div></div>
+  </div></div></div>`;
+}
+function courierText(o){
+  const it=o.items||[],qty=it.reduce((s,i)=>s+i.qty,0),alt=o.loginPhone&&o.loginPhone!==o.phone?o.loginPhone:'';
+  return `Invoice: ${o.orderId}\nRecipient Name: ${o.customerName}\nRecipient Phone: ${o.phone}\n${alt?'Alternative Phone: '+alt+'\n':''}Recipient Address: ${o.address}\nCOD Amount: ${codAmt(o)}\nItem Description: ${it.map(i=>`${i.name} (${i.variant}) x${i.qty}`).join(', ')}\nTotal Lot: ${qty}\nDelivery Area: ${o.zone}\nPayment: ${o.paymentMethod}${o.trxId&&o.trxId!=='N/A'?' (Paid, TrxID '+o.trxId+')':''}\nNote: ${o.note||''}`;
+}
+function copyText(t,msg){navigator.clipboard.writeText(t).then(()=>alert(msg),()=>prompt('কপি করুন:',t))}
+function copyForCourier(id){const o=orders.find(x=>x.orderId===id);if(o)copyText(courierText(o),'কুরিয়ারের তথ্য কপি হয়েছে। COD Amount: '+codAmt(o)+' BDT')}
+function bulkCopy(){const L=pickOrders();if(!L.length)return alert('কোনো অর্ডার নেই');copyText(L.map(courierText).join('\n\n----------\n\n'),L.length+'টি অর্ডারের কুরিয়ার তথ্য কপি হয়েছে')}
+function bulkPrint(){printCourier(pickOrders().map(o=>o.orderId))}
+function printCourier(ids){
+  const L=ids.map(id=>orders.find(o=>o.orderId===id)).filter(Boolean);
+  if(!L.length)return alert('কোনো অর্ডার নেই');
+  const total=L.reduce((s,o)=>s+codAmt(o),0);
+  const slip=o=>{
+    const it=o.items||[],qty=it.reduce((s,i)=>s+i.qty,0),alt=o.loginPhone&&o.loginPhone!==o.phone?o.loginPhone:'';
+    const r=(k,v)=>v?`<div class="r"><b>${k}</b><span>${esc(v)}</span></div>`:'';
+    return `<div class="slip"><h3><span>Rosemary BD</span><span>${esc(o.orderId)}</span></h3>
+    ${r('তারিখ',o.dateStr)}${r('Recipient',o.customerName)}${r('Phone',o.phone)}${r('Alt. Phone',alt)}${r('Address',o.address)}${r('Area',o.zone)}
+    ${r('Item',it.map(i=>`${i.name} (${i.variant}) x${i.qty}`).join(', '))}${r('Total Lot',String(qty))}${r('Payment',o.paymentMethod+(o.trxId&&o.trxId!=='N/A'?' (Paid, '+o.trxId+')':''))}${r('Note',o.note)}
+    <div class="cod">${codAmt(o)?'COD ৳'+codAmt(o):'PAID — COD ৳0'}</div></div>`;
+  };
+  const html=`<!DOCTYPE html><html lang="bn"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Courier-${L.length}-orders</title>
+  <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;600;700&display=swap" rel="stylesheet"><style>
+  @page{size:A4;margin:8mm}*{box-sizing:border-box}body{font-family:'Hind Siliguri','Noto Sans Bengali',sans-serif;color:#163026;margin:0;font-size:12px}
+  .bar{padding:10px 12px;background:#1A362B;color:#fff;display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:13px}.bar button{padding:9px 14px;border:0;border-radius:8px;background:#D4AF37;font-weight:700;font-family:inherit}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:6mm;padding:6mm}.slip{border:1.5px dashed #1A362B;border-radius:8px;padding:9px 11px;break-inside:avoid;page-break-inside:avoid}
+  .slip h3{margin:0 0 6px;font-size:14px;display:flex;justify-content:space-between}.r{display:flex;gap:6px;margin:2px 0}.r b{min-width:70px;color:#555;font-weight:600}.r span{flex:1;word-break:break-word}
+  .cod{font-size:20px;font-weight:700;color:#C86D51;margin-top:6px;text-align:center;border:1.5px solid #C86D51;border-radius:6px;padding:3px}
+  @media print{.bar{display:none}.grid{padding:0}}@media screen and (max-width:600px){.grid{grid-template-columns:1fr}}</style></head><body>
+  <div class="bar"><span>${L.length}টি অর্ডার · মোট COD ৳${total}</span><button onclick="window.print()">প্রিন্ট / PDF সেভ</button></div>
+  <div class="grid">${L.map(slip).join('')}</div><script>setTimeout(function(){window.print()},900)<\/script></body></html>`;
+  const w=window.open('','_blank');
+  if(!w)return alert('পপ-আপ ব্লক হয়েছে। ব্রাউজারে এই সাইটের পপ-আপ অনুমতি দিয়ে আবার চেষ্টা করুন।');
+  w.document.open();w.document.write(html);w.document.close();
+}
+
+/**************************************************************
+ * পণ্যের একাধিক ছবি (গ্যালারি থেকে আপলোড, ছোট করে সেভ)
+ **************************************************************/
+let pgImgs=[];const gcache={};
+function shrink(src,max,q){
+  return new Promise((ok,no)=>{
+    const im=new Image(),go=u=>{im.onload=()=>{const k=Math.min(1,max/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);
+      const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);x.drawImage(im,0,0,c.width,c.height);ok(c.toDataURL('image/jpeg',q))};im.onerror=no;im.src=u};
+    if(typeof src==='string')go(src);else{const r=new FileReader();r.onload=()=>go(r.result);r.onerror=no;r.readAsDataURL(src)}
+  });
+}
+function renderPG(){
+  $('prod-gallery').innerHTML=pgImgs.map((u,i)=>`<div class="relative aspect-square rounded-xl overflow-hidden bg-white border border-forest/10"><img src="${esc(u)}" class="w-full h-full object-cover" alt="">
+    <button type="button" onclick="pgDel(${i})" class="absolute top-1 right-1 w-6 h-6 rounded-full bg-black/60 text-white text-xs" aria-label="মুছুন">×</button>
+    ${i===0?'<span class="absolute bottom-1 left-1 bg-gold text-forest text-[10px] font-bold px-1.5 rounded">মূল</span>':`<button type="button" onclick="pgMain(${i})" class="absolute bottom-1 left-1 bg-white/90 text-[10px] font-bold px-1.5 rounded">মূল করুন</button>`}</div>`).join('')
+    +`<p class="col-span-3 text-[11px] ${pgImgs.length<3?'text-terracotta':'text-forest/60'}">${pgImgs.length}টি ছবি${pgImgs.length<3?' — কমপক্ষে ৩টি দিন':''}</p>`;
+}
+function pgDel(i){pgImgs.splice(i,1);renderPG()}
+function pgMain(i){const [x]=pgImgs.splice(i,1);pgImgs.unshift(x);renderPG()}
+function addProdUrl(){const v=$('prod-img').value.trim();if(!/^https?:\/\//.test(v)&&!/^images\//.test(v))return alert('সঠিক ছবির লিংক দিন');pgImgs.push(v);$('prod-img').value='';renderPG()}
+async function addProdFiles(fl){
+  for(const f of fl){if(!f.type.startsWith('image/'))continue;try{pgImgs.push(await shrink(f,1000,.78))}catch(e){alert('একটি ছবি পড়া যায়নি')}}
+  $('prod-files').value='';renderPG();
+}
+async function fetchGallery(pid){
+  if(gcache[pid])return gcache[pid];
+  let g=null;
+  try{
+    if(live()){const d=await fb('productImages/'+encodeURIComponent(pid));g=Array.isArray(d)?d.filter(Boolean):(d?Object.values(d):null)}
+    else g=(JSON.parse(localStorage.getItem('pb_pimgs')||'{}'))[pid]||null;
+  }catch(e){console.error(e)}
+  const p=products.find(x=>x.id===pid);
+  if(!g||!g.length)g=p&&p.image?[p.image]:[];
+  return gcache[pid]=g;
+}
+function galleryHTML(p){
+  const G=gcache[p.id]&&gcache[p.id].length?gcache[p.id]:[p.image||''],gi=Math.min(det.gi||0,G.length-1);
+  const ar='absolute top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/90 hover:bg-white text-forest shadow-lg flex items-center justify-center';
+  return `<div class="max-w-md mx-auto"><div class="relative rounded-t-[180px] rounded-b-3xl overflow-hidden border-4 border-white shadow-2xl aspect-[4/5] bg-creamDark">
+    <img src="${esc(G[gi])}" onerror="this.onerror=null;this.src=PH" alt="${esc(p.name)}" class="w-full h-full object-cover">
+    ${G.length>1?`<button onclick="detImg(-1)" aria-label="আগের ছবি" class="${ar} left-3"><i class="fa-solid fa-chevron-left"></i></button><button onclick="detImg(1)" aria-label="পরের ছবি" class="${ar} right-3"><i class="fa-solid fa-chevron-right"></i></button>`:''}</div>
+    ${G.length>1?`<div class="flex gap-2 mt-3 justify-center flex-wrap">${G.map((u,i)=>`<button onclick="detSetImg(${i})" class="w-14 h-14 rounded-xl overflow-hidden border-2 ${i===gi?'border-forest':'border-transparent opacity-70'}"><img src="${esc(u)}" class="w-full h-full object-cover" alt=""></button>`).join('')}</div>`:''}</div>`;
+}
+function detSetImg(i){det.gi=i;renderProductDetail(products.find(p=>p.id===det.id))}
+function detImg(d){const n=(gcache[det.id]||[]).length||1;det.gi=((det.gi||0)+d+n)%n;renderProductDetail(products.find(p=>p.id===det.id))}
+function openProductModal(){
+  ['prod-id','prod-name','prod-bn','prod-variants','prod-img','prod-desc'].forEach(i=>$(i).value='');
+  $('prod-stock').checked=true;$('prod-cat').value=CATS[0];pgImgs=[];renderPG();
+  $('product-modal-title').textContent='নতুন অর্গানিক পণ্য যোগ করুন';show('product-modal',true);
+}
+async function editProduct(id){
+  const p=products.find(x=>x.id===id);if(!p)return;
+  $('prod-id').value=p.id;$('prod-name').value=p.name;$('prod-bn').value=p.bnName;$('prod-cat').value=p.category;
+  $('prod-variants').value=p.variants.map(v=>`${v.label}=${v.price}`).join(', ');$('prod-img').value='';
+  $('prod-desc').value=p.description||'';$('prod-stock').checked=!!p.inStock;
+  pgImgs=p.image?[p.image]:[];renderPG();
+  $('product-modal-title').textContent='পণ্য এডিট করুন';show('product-modal',true);
+  const g=await fetchGallery(id);if($('prod-id').value===id){pgImgs=[...g];renderPG()}
+}
+async function saveProductForm(e){
+  e.preventDefault();
+  const vs=$('prod-variants').value.split(',').map(x=>x.trim()).filter(Boolean).map(x=>{const [l,p]=x.split('=');return {label:(l||'').trim(),price:Number((p||'').trim())}});
+  if(!vs.length||vs.some(v=>!v.label||!(v.price>0))){alert('প্যাক সাইজ ও দাম এভাবে লিখুন: 50g=150, 100g=260');return}
+  if(!pgImgs.length)return alert('কমপক্ষে একটি ছবি দিন।');
+  if(pgImgs.length<3&&!confirm('মাত্র '+pgImgs.length+'টি ছবি আছে (৩টি বা বেশি দিলে ভালো)। তবুও সেভ করবেন?'))return;
+  const btn=e.target.querySelector('button[type=submit]'),old=products.find(p=>p.id===$('prod-id').value);
+  const id=$('prod-id').value||'prod_'+Date.now();
+  if(btn){btn.disabled=true}
+  try{
+    const first=pgImgs[0],thumb=first.startsWith('data:')?await shrink(first,640,.72):first;
+    if(live())await fb('productImages/'+encodeURIComponent(id),'PUT',pgImgs,true);
+    else{const all=JSON.parse(localStorage.getItem('pb_pimgs')||'{}');all[id]=pgImgs;localStorage.setItem('pb_pimgs',JSON.stringify(all))}
+    gcache[id]=[...pgImgs];
+    const obj={id,name:$('prod-name').value.trim(),bnName:$('prod-bn').value.trim(),category:$('prod-cat').value,variants:vs,image:thumb,imgCount:pgImgs.length,
+      description:$('prod-desc').value.trim(),inStock:$('prod-stock').checked,badge:old?.badge||'100% Organic'};
+    if(await saveProductToDB(obj))closeProductModal();
+  }catch(err){
+    if(String(err.name)==='QuotaExceededError')alert('ডিভাইসের স্টোরেজ ভরে গেছে। কম বা ছোট ছবি দিন।');else adminErr(err);
+  }
+  if(btn)btn.disabled=false;
 }
 window.addEventListener('DOMContentLoaded',()=>{renderCategoryPills();updateCustBtn();syncAllData()});
 </script>
