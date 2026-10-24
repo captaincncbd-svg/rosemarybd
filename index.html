@@ -647,11 +647,11 @@
 /**************************************************************
  * 1. CONFIG  (এখানে আপনার তথ্য বসান)
  **************************************************************/
-let FIREBASE_DB_URL = localStorage.getItem('pb_firebase_url') || "";   // অথবা অ্যাডমিন > Firebase URL সেটআপ থেকে দিন
-const FIREBASE_API_KEY = "";   // Firebase Project Settings > Web API Key (অ্যাডমিন লগইনের জন্য)
-const ADMIN_EMAIL = "";        // Firebase Authentication-এ বানানো অ্যাডমিন ইমেইল
+let FIREBASE_DB_URL = localStorage.getItem('pb_firebase_url') || "https://rosemarybd-32867-default-rtdb.asia-southeast1.firebasedatabase.app";   // অথবা অ্যাডমিন > Firebase URL সেটআপ থেকে দিন
+const FIREBASE_API_KEY = "AIzaSyBygtisjdg9reOIWUrPl5qut3B5rV6L56E";   // Firebase Project Settings > Web API Key (অ্যাডমিন লগইনের জন্য)
+const ADMIN_EMAIL = "captain.cnc.bd@gmail.com";        // Firebase Authentication-এ বানানো অ্যাডমিন ইমেইল
 const PAY_NUMBERS = {bKash:"01892574822", Nagad:"01734343235"};   // শুধু Send Money নাম্বার
-const ADMIN_PIN = "1234";      // UI লক (আসল সুরক্ষা Firebase Auth + Rules)
+const ADMIN_PIN = "9694";      // UI লক (আসল সুরক্ষা Firebase Auth + Rules)
 const CATS = ['Hair Care','Skin Care','Raw Herbs','Oils'];
 const CAT_LABEL = {'All':'সকল পণ্য (All)','Hair Care':'হেয়ার কেয়ার (Hair Care)','Skin Care':'স্কিন কেয়ার (Skin Care)','Raw Herbs':'র হার্বস (Raw Herbs)','Oils':'অয়েল (Oils)'};
 const LEGACY = {'Hair Oil':'Oils','Herbal Powder':'Hair Care'};
