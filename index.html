@@ -1696,10 +1696,20 @@ window.addEventListener('DOMContentLoaded',()=>{renderCategoryPills();updateCust
   /* ★ শুধু এই দুটি লাইন বদলান ★ */
   var WA_NUMBER='8801308933309';            // WhatsApp (দেশ কোডসহ, + ছাড়া)
   var FB_PAGE='61573176830596';         // Facebook পেজের ইউজারনেম বা Page ID (m.me/ এর পরের অংশ)
+  var MSG='হ্যালো Rosemary BD! আমি আপনাদের ওয়েবসাইট থেকে এসেছি। আপনাদের অর্গানিক হেয়ার কেয়ার প্রোডাক্টগুলো সম্পর্কে কিছু তথ্য জানতে চাই এবং অর্ডার করতে চাই';
   var wa=document.getElementById('chat-wa');
-  wa.href='https://wa.me/'+WA_NUMBER+'?text='+encodeURIComponent('আসসালামু আলাইকুম, Rosemary BD থেকে কিছু জানতে চাই।');
+  wa.href='https://wa.me/'+WA_NUMBER+'?text='+encodeURIComponent(MSG);
   if(FB_PAGE&&FB_PAGE!=='YOUR_PAGE_USERNAME'){
-    document.getElementById('chat-mb').href='https://m.me/'+encodeURIComponent(FB_PAGE);
+    var mb=document.getElementById('chat-mb');
+    mb.href='https://m.me/'+encodeURIComponent(FB_PAGE);
+    /* Messenger লিংকে আগে থেকে লেখা বসানো যায় না, তাই মেসেজ কপি হয়ে যায় — চ্যাটে পেস্ট করলেই হবে */
+    mb.addEventListener('click',function(){
+      try{navigator.clipboard.writeText(MSG)}catch(e){}
+      var t=document.createElement('div');
+      t.textContent='মেসেজ কপি হয়েছে — Messenger-এ পেস্ট করে পাঠান';
+      t.style.cssText='position:fixed;left:50%;bottom:90px;transform:translateX(-50%);z-index:60;background:#163026;color:#F7EED3;padding:10px 16px;border-radius:10px;font-size:13px;box-shadow:0 6px 18px rgba(0,0,0,.3);max-width:90%;text-align:center';
+      document.body.appendChild(t);setTimeout(function(){t.remove()},3500);
+    });
     document.getElementById('chat-logo').src=(typeof LOGO_MARK!=='undefined'?LOGO_MARK:'');
     document.getElementById('chat-bar').style.display='flex';
     document.body.classList.add('has-chat-bar');
