@@ -1156,6 +1156,21 @@ function addDetailToCart(){
   const e=cart.find(i=>i.prodId===p.id&&i.variant===v.label);e?e.qty+=det.qty:cart.push({prodId:p.id,variant:v.label,qty:det.qty});
   det.qty=1;saveCart();renderProductDetail(p);toggleCart(true);
 }
+const descOpen={};
+function setupDesc(id){
+  const b=$('desc-box'),btn=$('desc-btn'),f=$('desc-fade');if(!b)return;
+  const open=!!descOpen[id];
+  const long=b.scrollHeight>b.clientHeight+8||open;
+  btn.classList.toggle('hidden',!long);
+  if(f)f.classList.toggle('hidden',!(long&&!open));
+}
+function toggleDesc(id){
+  descOpen[id]=!descOpen[id];
+  const b=$('desc-box');b.style.maxHeight=descOpen[id]?'none':'9.5rem';
+  $('desc-btn').textContent=descOpen[id]?'কম দেখুন ▲':'আরো পড়ুন ▼';
+  $('desc-fade').classList.toggle('hidden',!!descOpen[id]);
+  if(!descOpen[id])b.scrollIntoView({block:'nearest',behavior:'smooth'});
+}
 function renderProductDetail(p){
   const v=p.variants[det.vi]||p.variants[0],rel=products.filter(x=>x.id!==p.id).slice(0,3);
   $('product-detail').innerHTML=`
@@ -1163,7 +1178,7 @@ function renderProductDetail(p){
   <div class="space-y-5">
     <span class="text-[11px] uppercase tracking-widest text-terracotta font-bold">${esc(p.category)}${p.badge?' • '+esc(p.badge):''}</span>
     <div><h1 class="font-serif text-4xl font-bold text-forest leading-tight">${esc(p.name)}</h1><p class="text-lg text-forest/75 mt-1">${esc(p.bnName)}</p></div>
-    <div class="text-sm text-forest/75 leading-relaxed">${descHTML(p.description)}</div>
+    <div><div id="desc-box" class="text-sm text-forest/75 leading-relaxed relative overflow-hidden" style="max-height:${descOpen[p.id]?'none':'9.5rem'}">${descHTML(p.description)}<div id="desc-fade" class="absolute inset-x-0 bottom-0 h-14 pointer-events-none hidden" style="background:linear-gradient(to bottom,rgba(247,238,211,0),#F7EED3)"></div></div><button id="desc-btn" onclick="toggleDesc('${esc(p.id)}')" class="hidden mt-2 text-sm font-bold text-terracotta hover:underline">${descOpen[p.id]?'কম দেখুন ▲':'আরো পড়ুন ▼'}</button></div>
     <div><p class="text-xs font-bold mb-2">প্যাক সাইজ নির্বাচন করুন</p><div class="flex flex-wrap gap-2">${p.variants.map((x,i)=>`<button onclick="detVariant(${i})" class="px-4 py-2 rounded-xl text-xs font-bold border transition ${i===det.vi?'bg-forest text-cream border-forest':'bg-white text-forest border-forest/20 hover:border-forest'}">${esc(x.label)} · ৳${x.price}</button>`).join('')}</div></div>
     <div class="flex items-end justify-between">
       <div><span class="text-[11px] text-forest/50 block">মূল্য (${esc(v.label)})</span><span class="font-serif text-4xl font-bold text-forest">৳${v.price}</span></div>
@@ -1174,6 +1189,7 @@ function renderProductDetail(p){
     <ul class="text-xs text-forest/70 space-y-1.5 pt-2"><li>🌱 ১০০% অর্গানিক ও কেমিক্যাল মুক্ত</li><li>🔬 ল্যাব টেস্টেড</li><li>💵 ক্যাশ অন ডেলিভারি / bKash / Nagad</li></ul>
   </div>
   ${rel.length?`<div class="md:col-span-2 pt-6 border-t border-forest/10"><h3 class="font-serif text-2xl font-bold mb-4">আরও পণ্য</h3><div class="grid grid-cols-3 gap-3 sm:gap-6">${rel.map(x=>`<div onclick="openProductDetail('${esc(x.id)}')" class="cursor-pointer group"><div class="aspect-square rounded-2xl overflow-hidden bg-creamDark"><img src="${esc(x.image||'')}" onerror="this.onerror=null;this.src=PH" alt="" class="w-full h-full object-cover group-hover:scale-105 transition duration-500"></div><p class="text-xs sm:text-sm font-bold mt-2 leading-snug">${esc(x.name)}</p><p class="text-xs text-terracotta font-semibold">৳${x.variants[0].price}-থেকে</p></div>`).join('')}</div></div>`:''}`;
+  setupDesc(p.id);
 }
 function route(){
   const m=location.hash.match(/^#product\/(.+)$/),pv=$('product-view'),was=!pv.classList.contains('hidden');
@@ -1652,6 +1668,42 @@ window.addEventListener('DOMContentLoaded',()=>{renderCategoryPills();updateCust
   addEventListener('resize',size);
   document.addEventListener('visibilitychange',()=>{const v=!document.hidden;if(v&&!run&&!reduce){run=true;requestAnimationFrame(frame)}else if(!v)run=false});
   init();
+})();
+</script>
+
+<!-- ==================== CHAT: WhatsApp + Messenger ==================== -->
+<style>
+  #chat-wa{position:fixed;right:16px;bottom:16px;z-index:45;width:56px;height:56px;border-radius:9999px;background:#25D366;color:#fff;display:flex;align-items:center;justify-content:center;font-size:30px;box-shadow:0 6px 18px rgba(0,0,0,.28);transition:transform .2s}
+  #chat-wa:hover{transform:scale(1.07)}
+  #chat-bar{position:fixed;left:0;right:0;bottom:0;z-index:44;background:#163026;color:#F7EED3;display:none;align-items:center;gap:12px;padding:8px 14px calc(8px + env(safe-area-inset-bottom,0px));border-top:1px solid rgba(247,238,211,.15)}
+  #chat-bar .lg{width:44px;height:44px;border-radius:9999px;background:#F7EED3;display:flex;align-items:center;justify-content:center;flex:none}
+  #chat-bar .lg img{height:30px;width:auto}
+  #chat-bar .tx{flex:1;min-width:0;line-height:1.15}
+  #chat-bar .tx b{display:block;font-size:15px}
+  #chat-bar .tx span{font-size:12px;opacity:.75}
+  #chat-bar a.mb{background:#0084FF;color:#fff;font-weight:700;font-size:14px;padding:10px 16px;border-radius:10px;display:flex;align-items:center;gap:8px;flex:none}
+  body.has-chat-bar{padding-bottom:64px}
+  body.has-chat-bar #chat-wa{bottom:80px}
+</style>
+<a id="chat-wa" target="_blank" rel="noopener" aria-label="WhatsApp-এ মেসেজ করুন"><i class="fa-brands fa-whatsapp"></i></a>
+<div id="chat-bar">
+  <div class="lg"><img id="chat-logo" alt=""></div>
+  <div class="tx"><b>Rosemary BD</b><span>Messenger-এ মেসেজ করুন</span></div>
+  <a class="mb" id="chat-mb" target="_blank" rel="noopener"><i class="fa-brands fa-facebook-messenger"></i> Messenger</a>
+</div>
+<script>
+(function(){
+  /* ★ শুধু এই দুটি লাইন বদলান ★ */
+  var WA_NUMBER='8801308933309';            // WhatsApp (দেশ কোডসহ, + ছাড়া)
+  var FB_PAGE='61573176830596';         // Facebook পেজের ইউজারনেম বা Page ID (m.me/ এর পরের অংশ)
+  var wa=document.getElementById('chat-wa');
+  wa.href='https://wa.me/'+WA_NUMBER+'?text='+encodeURIComponent('আসসালামু আলাইকুম, Rosemary BD থেকে কিছু জানতে চাই।');
+  if(FB_PAGE&&FB_PAGE!=='YOUR_PAGE_USERNAME'){
+    document.getElementById('chat-mb').href='https://m.me/'+encodeURIComponent(FB_PAGE);
+    document.getElementById('chat-logo').src=(typeof LOGO_MARK!=='undefined'?LOGO_MARK:'');
+    document.getElementById('chat-bar').style.display='flex';
+    document.body.classList.add('has-chat-bar');
+  }
 })();
 </script>
 </body>
